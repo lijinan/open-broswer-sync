@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>生成扩展图标</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon-generator { margin: 20px 0; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>浏览器扩展图标生成器</h1>
+    <p>这个页面可以生成扩展所需的图标文件</p>
+    
+    <div class="icon-generator">
+        <h3>图标预览</h3>
+        <canvas id="icon16" width="16" height="16"></canvas>
+        <canvas id="icon32" width="32" height="32"></canvas>
+        <canvas id="icon48" width="48" height="48"></canvas>
+        <canvas id="icon128" width="128" height="128"></canvas>
+    </div>
+    
+    <div>
+        <button onclick="generateIcons()">生成图标</button>
+        <button onclick="downloadIcons()">下载图标</button>
+    </div>
+
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            
+            // 背景
+            ctx.fillStyle = '#1890ff';
+            ctx.fillRect(0, 0, size, size);
+            
+            // 书签图标
+            ctx.fillStyle = 'white';
+            const padding = size * 0.2;
+            const bookmarkWidth = size - padding * 2;
+            const bookmarkHeight = size - padding * 2;
+            
+            // 绘制书签形状
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding + bookmarkWidth, padding);
+            ctx.lineTo(padding + bookmarkWidth, padding + bookmarkHeight * 0.8);
+            ctx.lineTo(padding + bookmarkWidth * 0.7, padding + bookmarkHeight * 0.6);
+            ctx.lineTo(padding + bookmarkWidth * 0.3, padding + bookmarkHeight * 0.6);
+            ctx.lineTo(padding, padding + bookmarkHeight * 0.8);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 添加小锁图标表示安全
+            if (size >= 32) {
+                ctx.fillStyle = '#faad14';
+                const lockSize = size * 0.15;
+                const lockX = padding + bookmarkWidth * 0.7;
+                const lockY = padding + bookmarkHeight * 0.1;
+                
+                // 绘制锁
+                ctx.fillRect(lockX, lockY, lockSize, lockSize * 0.8);
+                ctx.strokeStyle = '#faad14';
+                ctx.lineWidth = Math.max(1, size * 0.02);
+                ctx.beginPath();
+                ctx.arc(lockX + lockSize/2, lockY, lockSize * 0.3, Math.PI, 0);
+                ctx.stroke();
+            }
+        }
+        
+        function generateIcons() {
+            const sizes = [16, 32, 48, 128];
+            sizes.forEach(size => {
+                const canvas = document.getElementById(`icon${size}`);
+                drawIcon(canvas, size);
+            });
+        }
+        
+        function downloadIcons() {
+            const sizes = [16, 32, 48, 128];
+            sizes.forEach(size => {
+                const canvas = document.getElementById(`icon${size}`);
+                const link = document.createElement('a');
+                link.download = `icon${size}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+        
+        // 页面加载时自动生成图标
+        window.onload = generateIcons;
+    </script>
+</body>
+</html>

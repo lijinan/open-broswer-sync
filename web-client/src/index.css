@@ -1,0 +1,173 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* 主题切换动画 */
+.light-theme {
+  background-color: #f5f5f5;
+  color: rgba(0, 0, 0, 0.85);
+  transition: all 0.3s ease;
+}
+
+.dark-theme {
+  background-color: #000000;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.3s ease;
+}
+
+.dark-theme .ant-layout {
+  background: #000000 !important;
+}
+
+.dark-theme .ant-layout-content {
+  background: #141414 !important;
+}
+
+/* 登录页面样式 */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: all 0.3s ease;
+}
+
+.dark-theme .login-container {
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+}
+
+.login-form {
+  background: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  transition: all 0.3s ease;
+}
+
+.dark-theme .login-form {
+  background: #1f1f1f;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid #434343;
+}
+
+/* 侧边栏样式增强 */
+.ant-layout-sider-collapsed .ant-menu-item-icon {
+  font-size: 16px;
+}
+
+/* 密码项样式 */
+.password-item {
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.password-item:hover {
+  background-color: #f5f5f5;
+}
+
+.dark-theme .password-item:hover {
+  background-color: #262626;
+}
+
+/* 主题切换按钮样式 */
+.theme-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 卡片暗黑模式增强 */
+.dark-theme .ant-card {
+  background: #1f1f1f !important;
+  border-color: #434343 !important;
+}
+
+.dark-theme .ant-card-head {
+  background: #1f1f1f !important;
+  border-color: #434343 !important;
+}
+
+/* 表格暗黑模式 */
+.dark-theme .ant-table {
+  background: #1f1f1f !important;
+}
+
+.dark-theme .ant-table-thead > tr > th {
+  background: #262626 !important;
+  border-color: #434343 !important;
+}
+
+.dark-theme .ant-table-tbody > tr > td {
+  border-color: #434343 !important;
+}
+
+.dark-theme .ant-table-tbody > tr:hover > td {
+  background: #262626 !important;
+}
+
+/* 模态框暗黑模式 */
+.dark-theme .ant-modal-content {
+  background: #1f1f1f !important;
+}
+
+.dark-theme .ant-modal-header {
+  background: #1f1f1f !important;
+  border-color: #434343 !important;
+}
+
+/* 输入框暗黑模式 */
+.dark-theme .ant-input {
+  background: #262626 !important;
+  border-color: #434343 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark-theme .ant-input:focus {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+/* 按钮暗黑模式增强 */
+.dark-theme .ant-btn-default {
+  background: #262626 !important;
+  border-color: #434343 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark-theme .ant-btn-default:hover {
+  background: #434343 !important;
+  border-color: #1890ff !important;
+}
+
+/* 滚动条暗黑模式 */
+.dark-theme ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark-theme ::-webkit-scrollbar-track {
+  background: #262626;
+}
+
+.dark-theme ::-webkit-scrollbar-thumb {
+  background: #434343;
+  border-radius: 4px;
+}
+
+.dark-theme ::-webkit-scrollbar-thumb:hover {
+  background: #595959;
+}

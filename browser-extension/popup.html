@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 350px;
+      min-height: 400px;
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .logo {
+      font-size: 20px;
+      font-weight: bold;
+      color: #1890ff;
+      margin-bottom: 8px;
+    }
+    
+    .status {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .status.connected {
+      color: #52c41a;
+    }
+    
+    .status.disconnected {
+      color: #ff4d4f;
+    }
+    
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .action-btn {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: white;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      color: inherit;
+    }
+    
+    .action-btn:hover {
+      border-color: #1890ff;
+      box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+    }
+    
+    .action-btn.primary {
+      background: #1890ff;
+      color: white;
+      border-color: #1890ff;
+    }
+    
+    .action-btn.primary:hover {
+      background: #40a9ff;
+    }
+    
+    .action-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    
+    .action-text {
+      flex: 1;
+    }
+    
+    .action-title {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    
+    .action-desc {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .form-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .form-input {
+      padding: 8px 12px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: #1890ff;
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    }
+    
+    .settings {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 12px;
+    }
+    
+    .toggle {
+      width: 40px;
+      height: 20px;
+      background: #ccc;
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .toggle.active {
+      background: #1890ff;
+    }
+    
+    .toggle::after {
+      content: '';
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.3s;
+    }
+    
+    .toggle.active::after {
+      transform: translateX(20px);
+    }
+    
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 11px;
+      color: #999;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #1890ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">📚 书签同步</div>
+    <div class="status" id="status">检查连接中...</div>
+  </div>
+
+  <!-- 登录表单 -->
+  <div class="login-form" id="loginForm">
+    <div class="form-group">
+      <label class="form-label">服务器地址</label>
+      <input type="text" class="form-input" id="serverUrl" value="http://localhost:3001" placeholder="http://localhost:3001">
+    </div>
+    <div class="form-group">
+      <label class="form-label">用户名</label>
+      <input type="text" class="form-input" id="username" placeholder="请输入用户名">
+    </div>
+    <div class="form-group">
+      <label class="form-label">密码</label>
+      <input type="password" class="form-input" id="password" placeholder="请输入密码">
+    </div>
+    <button class="action-btn primary" id="loginBtn">
+      <span class="action-text">登录</span>
+    </button>
+  </div>
+
+  <!-- 主要功能 -->
+  <div class="actions hidden" id="mainActions">
+    <button class="action-btn" id="saveBookmarkBtn">
+      <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+      </svg>
+      <div class="action-text">
+        <div class="action-title">保存当前页面为书签</div>
+        <div class="action-desc">一键保存到书签库</div>
+      </div>
+    </button>
+
+    <button class="action-btn" id="detectPasswordBtn">
+      <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+      </svg>
+      <div class="action-text">
+        <div class="action-title">检测并保存密码</div>
+        <div class="action-desc">自动检测登录表单</div>
+      </div>
+    </button>
+
+    <button class="action-btn" id="openDashboardBtn">
+      <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+      </svg>
+      <div class="action-text">
+        <div class="action-title">打开管理面板</div>
+        <div class="action-desc">查看所有书签和密码</div>
+      </div>
+    </button>
+
+    <button class="action-btn" id="syncBtn">
+      <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+      </svg>
+      <div class="action-text">
+        <div class="action-title">立即同步</div>
+        <div class="action-desc">同步最新数据</div>
+      </div>
+    </button>
+
+    <button class="action-btn" id="importBrowserDataBtn">
+      <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z M12,12L16,16H13.5V19H10.5V16H8L12,12Z"/>
+      </svg>
+      <div class="action-text">
+        <div class="action-title">从浏览器导入</div>
+        <div class="action-desc">覆盖账号所有数据</div>
+      </div>
+    </button>
+
+    <button class="action-btn" id="exportToBrowserBtn">
+      <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z M16,11V8H8V11H5L12,18L19,11H16Z"/>
+      </svg>
+      <div class="action-text">
+        <div class="action-title">导出到浏览器</div>
+        <div class="action-desc">同步服务器书签到浏览器</div>
+      </div>
+    </button>
+
+    <button class="action-btn" id="openSettingsBtn">
+      <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+      </svg>
+      <div class="action-text">
+        <div class="action-title">扩展设置</div>
+        <div class="action-desc">配置工作模式和偏好</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- 设置 -->
+  <div class="settings">
+    <div class="settings-item">
+      <span>自动检测密码表单</span>
+      <div class="toggle active" id="autoDetectToggle"></div>
+    </div>
+    <div class="settings-item">
+      <span>保存时显示确认</span>
+      <div class="toggle active" id="confirmSaveToggle"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>书签密码同步助手 v1.0</div>
+    <div>私有化部署 · 安全可靠</div>
+  </div>
+
+  <script src="browser-polyfill.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

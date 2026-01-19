@@ -1,0 +1,11 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="128" height="128" fill="#1890ff" rx="16"/>
+  
+  <!-- 书签图标 -->
+  <path d="M32 24 L96 24 L96 88 L72 72 L56 72 L32 88 Z" fill="white"/>
+  
+  <!-- 锁图标 -->
+  <circle cx="80" cy="40" r="8" fill="none" stroke="#faad14" stroke-width="3"/>
+  <rect x="72" y="40" width="16" height="12" fill="#faad14" rx="2"/>
+</svg>
