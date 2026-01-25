@@ -5,18 +5,22 @@ class PasswordManager {
     this.token = null
     this.autoDetect = true
     this.confirmSave = true
+    // 用于存储最近输入的密码数据
+    this.recentPasswordData = null
+    // 防抖标记，防止重复保存
+    this.saveInProgress = false
     this.init()
   }
 
   async init() {
     // 检查是否在扩展环境中
-    const isExtensionContext = (typeof chrome !== 'undefined' && chrome.runtime) || 
+    const isExtensionContext = (typeof chrome !== 'undefined' && chrome.runtime) ||
                               (typeof browser !== 'undefined' && browser.runtime)
-    
+
     console.log('🔐 密码管理器初始化开始...')
     console.log('🌐 当前页面:', window.location.href)
     console.log('🔧 扩展环境:', isExtensionContext ? '是' : '否')
-    
+
     if (!isExtensionContext) {
       console.log('⚠️ 不在扩展环境中，密码管理器功能受限')
       console.log('💡 提示：要使用完整功能，请通过扩展访问测试页面')
@@ -33,7 +37,10 @@ class PasswordManager {
 
     // 加载设置
     await this.loadSettings()
-    
+
+    // 检查并恢复未完成的密码保存对话框
+    this.checkPendingPasswordSave()
+
     // 监听来自扩展的消息
     if (extensionAPI.runtime && extensionAPI.runtime.onMessage) {
       extensionAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -144,7 +151,24 @@ class PasswordManager {
       }
     })
 
-    console.log('🎯 表单监听器已设置')
+    // 监听页面上的所有点击事件，用于检测非表单登录
+    document.addEventListener('click', (event) => {
+      this.handlePageClick(event)
+    }, true) // 使用捕获阶段，确保在所有元素上都能捕获
+
+    // 监听页面导航（beforeunload），用于保存密码
+    window.addEventListener('beforeunload', () => {
+      this.handlePageUnload()
+    })
+
+    // 监听页面隐藏（用户切换标签或最小化浏览器）
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        this.handlePageUnload()
+      }
+    })
+
+    console.log('🎯 表单监听器已设置（包含非表单检测）')
   }
 
   // 处理表单提交
@@ -232,6 +256,225 @@ class PasswordManager {
   handlePasswordInput(passwordInput) {
     // 可以在这里添加实时密码强度检测等功能
     console.log('🔑 检测到密码输入')
+
+    // 尝试提取密码数据（无论是否在表单中）
+    const passwordData = this.extractPasswordFromInput(passwordInput)
+    if (passwordData) {
+      // 保存最近输入的密码数据
+      this.recentPasswordData = passwordData
+      console.log('💾 已缓存密码数据，等待登录确认')
+    }
+  }
+
+  // 处理页面点击事件（用于检测非表单登录）
+  async handlePageClick(event) {
+    // 如果没有缓存的密码数据，不需要处理
+    if (!this.recentPasswordData) {
+      return
+    }
+
+    const clickedElement = event.target
+
+    // 检查是否点击了登录按钮
+    if (this.isLoginButton(clickedElement)) {
+      console.log('🖱️ 检测到登录按钮点击')
+
+      // 延迟处理，给登录请求一些时间
+      setTimeout(async () => {
+        await this.trySavePasswordFromCache()
+      }, 500)
+    }
+  }
+
+  // 处理页面卸载事件
+  async handlePageUnload() {
+    // 如果有缓存的密码数据，尝试保存
+    if (this.recentPasswordData && !this.saveInProgress) {
+      console.log('🔄 页面即将卸载，尝试保存密码')
+      await this.trySavePasswordFromCache()
+    }
+  }
+
+  // 从单个密码输入框提取密码数据（不需要表单）
+  extractPasswordFromInput(passwordInput) {
+    try {
+      const password = passwordInput.value
+
+      if (!password || password.length < 3) {
+        return null
+      }
+
+      // 查找用户名输入框
+      let username = ''
+      let usernameInput = null
+
+      // 查找策略：
+      // 1. 查找同一直接父容器内的用户名输入框
+      // 2. 查找同一表单内的用户名输入框（如果有）
+      // 3. 查找整个页面中的用户名输入框（备选）
+
+      // 策略1：查找附近的输入框
+      const parent = passwordInput.parentElement
+      if (parent) {
+        const nearbyInputs = parent.querySelectorAll('input[type="text"], input[type="email"]')
+        for (const input of nearbyInputs) {
+          if (input.value && input.value.trim()) {
+            username = input.value.trim()
+            usernameInput = input
+            break
+          }
+        }
+      }
+
+      // 策略2：如果没找到，查找同一表单（如果有）
+      if (!username && passwordInput.form) {
+        const formInputs = passwordInput.form.querySelectorAll('input[type="text"], input[type="email"]')
+        for (const input of formInputs) {
+          if (input.value && input.value.trim()) {
+            username = input.value.trim()
+            usernameInput = input
+            break
+          }
+        }
+      }
+
+      // 策略3：查找整个页面中的用户名输入框
+      if (!username) {
+        const allInputs = document.querySelectorAll('input[type="text"], input[type="email"]')
+        for (const input of allInputs) {
+          if (input.value && input.value.trim()) {
+            username = input.value.trim()
+            usernameInput = input
+            break
+          }
+        }
+      }
+
+      const siteName = this.getSiteName()
+      const siteUrl = this.getSiteUrl()
+
+      console.log('✅ 从输入框提取密码数据:', {
+        siteName,
+        siteUrl,
+        username: username || '(未找到)',
+        passwordLength: password.length
+      })
+
+      return {
+        siteName,
+        siteUrl,
+        username,
+        password,
+        passwordInput,
+        usernameInput
+      }
+    } catch (error) {
+      console.error('❌ 提取密码数据失败:', error)
+      return null
+    }
+  }
+
+  // 判断元素是否是登录按钮
+  isLoginButton(element) {
+    if (!element || !element.tagName) {
+      return false
+    }
+
+    // 检查是否是按钮或可点击元素
+    const clickableTypes = ['BUTTON', 'A', 'INPUT']
+    if (!clickableTypes.includes(element.tagName)) {
+      return false
+    }
+
+    // 获取元素的文本、ID、类名、name等属性
+    const text = (element.textContent || element.value || '').toLowerCase()
+    const id = (element.id || '').toLowerCase()
+    const className = (element.className || '').toLowerCase()
+    const name = (element.name || '').toLowerCase()
+    const ariaLabel = (element.getAttribute('aria-label') || '').toLowerCase()
+
+    // 登录相关的关键词
+    const loginKeywords = [
+      'login', 'signin', 'sign-in', 'sign_in', '登录', '登陆',
+      'submit', '提交', 'continue', '继续', '进入',
+      'auth', 'authenticate', '认证'
+    ]
+
+    // 检查是否包含登录关键词
+    const combined = `${text} ${id} ${className} ${name} ${ariaLabel}`
+    const hasLoginKeyword = loginKeywords.some(keyword =>
+      combined.includes(keyword)
+    )
+
+    if (hasLoginKeyword) {
+      console.log('✅ 识别为登录按钮:', {
+        tag: element.tagName,
+        text: text.substring(0, 50),
+        id,
+        className
+      })
+      return true
+    }
+
+    return false
+  }
+
+  // 从缓存尝试保存密码
+  async trySavePasswordFromCache() {
+    if (!this.recentPasswordData || this.saveInProgress) {
+      return
+    }
+
+    try {
+      this.saveInProgress = true
+      console.log('💾 尝试从缓存保存密码')
+
+      // 检查是否在扩展环境中
+      const isExtensionContext = (typeof chrome !== 'undefined' && chrome.runtime) ||
+                                (typeof browser !== 'undefined' && browser.runtime)
+
+      if (!isExtensionContext) {
+        console.log('⚠️ 不在扩展环境中，无法保存密码')
+        return
+      }
+
+      // 检查是否已登录扩展
+      if (!this.token) {
+        console.log('⚠️ 扩展未登录，跳过密码保存')
+        return
+      }
+
+      const passwordData = this.recentPasswordData
+
+      if (!passwordData.password) {
+        console.log('⚠️ 密码为空，跳过保存')
+        return
+      }
+
+      // 检查是否已存在相同的密码
+      const existingPassword = await this.checkExistingPassword(passwordData.siteUrl, passwordData.username)
+
+      if (existingPassword) {
+        console.log('⚠️ 密码已存在，跳过保存')
+        // 清除缓存
+        this.recentPasswordData = null
+        return
+      }
+
+      console.log('✅ 准备保存密码到服务器')
+
+      if (this.confirmSave) {
+        // 使用持久化的UI对话框（不会因页面跳转而消失）
+        this.showPersistentPasswordDialog(passwordData)
+      } else {
+        // 自动保存
+        await this.savePasswordToServer(passwordData)
+      }
+    } catch (error) {
+      console.error('❌ 从缓存保存密码失败:', error)
+    } finally {
+      this.saveInProgress = false
+    }
   }
 
   // 检测密码表单（用于手动检测）
@@ -420,7 +663,294 @@ class PasswordManager {
     )
 
     if (confirmed) {
-      this.savePasswordToServer(passwordData)
+      this.savePasswordToServer(passwordData).then(() => {
+        // 保存成功后清除缓存
+        this.recentPasswordData = null
+      })
+    } else {
+      // 用户取消，也清除缓存
+      this.recentPasswordData = null
+    }
+  }
+
+  // 显示持久化密码保存对话框（跨页面）
+  showPersistentPasswordDialog(passwordData) {
+    console.log('🎨 显示持久化密码保存对话框')
+
+    // 先将密码数据保存到 sessionStorage，以便页面跳转后恢复
+    const dialogData = {
+      siteName: passwordData.siteName,
+      siteUrl: passwordData.siteUrl,
+      username: passwordData.username,
+      password: passwordData.password,
+      timestamp: Date.now()
+    }
+    sessionStorage.setItem('pendingPasswordSave', JSON.stringify(dialogData))
+
+    // 创建持久化对话框
+    this.createPersistentDialogUI(passwordData)
+  }
+
+  // 创建持久化对话框UI（使用Shadow DOM）
+  createPersistentDialogUI(passwordData) {
+    // 检查是否已经存在对话框
+    if (document.getElementById('password-save-dialog-container')) {
+      console.log('⚠️ 对话框已存在')
+      return
+    }
+
+    // 创建容器
+    const container = document.createElement('div')
+    container.id = 'password-save-dialog-container'
+    container.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2147483647;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    `
+
+    // 使用 Shadow DOM 避免样式冲突
+    const shadow = container.attachShadow({ mode: 'open' })
+
+    // 创建对话框内容
+    shadow.innerHTML = `
+      <style>
+        .dialog {
+          background: white;
+          border-radius: 12px;
+          padding: 24px;
+          max-width: 400px;
+          width: 90%;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          animation: slideIn 0.3s ease-out;
+          transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+
+        .dialog.fade-out {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateY(-20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .dialog-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .dialog-icon {
+          font-size: 32px;
+        }
+
+        .dialog-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1a1a1a;
+          margin: 0;
+        }
+
+        .dialog-content {
+          margin-bottom: 24px;
+        }
+
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-label {
+          color: #666;
+          font-size: 14px;
+        }
+
+        .info-value {
+          color: #1a1a1a;
+          font-size: 14px;
+          font-weight: 500;
+          text-align: right;
+          max-width: 200px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .dialog-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+        }
+
+        .btn {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-cancel {
+          background: #f5f5f5;
+          color: #666;
+        }
+
+        .btn-cancel:hover {
+          background: #e8e8e8;
+        }
+
+        .btn-save {
+          background: #1890ff;
+          color: white;
+        }
+
+        .btn-save:hover {
+          background: #40a9ff;
+        }
+
+        .close-btn {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          background: none;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+          color: #999;
+          padding: 4px;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .close-btn:hover {
+          color: #666;
+        }
+      </style>
+
+      <div class="dialog" style="position: relative;">
+        <button class="close-btn" id="dialog-close">×</button>
+        <div class="dialog-header">
+          <div class="dialog-icon">🔐</div>
+          <h3 class="dialog-title">保存密码</h3>
+        </div>
+        <div class="dialog-content">
+          <div class="info-row">
+            <span class="info-label">网站</span>
+            <span class="info-value" title="${this.escapeHtml(passwordData.siteName)}">${this.escapeHtml(passwordData.siteName)}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">用户名</span>
+            <span class="info-value" title="${this.escapeHtml(passwordData.username || '(无)')}">${this.escapeHtml(passwordData.username || '(无)')}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">密码</span>
+            <span class="info-value">${'*'.repeat(passwordData.password.length)}</span>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn btn-cancel" id="dialog-cancel">不再保存</button>
+          <button class="btn btn-save" id="dialog-save">保存</button>
+        </div>
+      </div>
+    `
+
+    // 添加到页面
+    document.body.appendChild(container)
+
+    // 绑定事件
+    const saveBtn = shadow.getElementById('dialog-save')
+    const cancelBtn = shadow.getElementById('dialog-cancel')
+    const closeBtn = shadow.getElementById('dialog-close')
+
+    const closeDialog = () => {
+      const dialog = shadow.querySelector('.dialog')
+      if (dialog) {
+        dialog.classList.add('fade-out')
+      }
+      setTimeout(() => {
+        if (container.parentNode) {
+          container.parentNode.removeChild(container)
+        }
+        sessionStorage.removeItem('pendingPasswordSave')
+      }, 200)
+    }
+
+    saveBtn.addEventListener('click', async () => {
+      console.log('✅ 用户确认保存密码')
+      await this.savePasswordToServer(passwordData)
+      closeDialog()
+    })
+
+    cancelBtn.addEventListener('click', () => {
+      console.log('❌ 用户取消保存密码')
+      this.recentPasswordData = null
+      closeDialog()
+    })
+
+    closeBtn.addEventListener('click', () => {
+      console.log('❌ 用户关闭对话框')
+      this.recentPasswordData = null
+      closeDialog()
+    })
+
+    // 30秒后自动关闭
+    setTimeout(() => {
+      if (document.body.contains(container)) {
+        console.log('⏰ 对话框超时自动关闭')
+        closeDialog()
+      }
+    }, 30000)
+  }
+
+  // HTML转义函数
+  escapeHtml(text) {
+    if (!text) return ''
+    const div = document.createElement('div')
+    div.textContent = text
+    return div.innerHTML
+  }
+
+  // 检查并恢复未完成的密码保存对话框
+  checkPendingPasswordSave() {
+    try {
+      const pendingData = sessionStorage.getItem('pendingPasswordSave')
+      if (pendingData) {
+        const data = JSON.parse(pendingData)
+        const now = Date.now()
+
+        // 检查是否过期（30秒）
+        if (now - data.timestamp < 30000) {
+          console.log('🔄 检测到未完成的密码保存，恢复对话框')
+          this.createPersistentDialogUI(data)
+        } else {
+          sessionStorage.removeItem('pendingPasswordSave')
+        }
+      }
+    } catch (error) {
+      console.error('❌ 恢复密码保存对话框失败:', error)
     }
   }
 
@@ -460,6 +990,8 @@ class PasswordManager {
         if (response && response.success) {
           console.log('✅ 密码保存成功')
           this.showPageNotification('密码已保存到密码管理器', 'success')
+          // 清除缓存
+          this.recentPasswordData = null
         } else {
           throw new Error(response?.error || '保存失败')
         }

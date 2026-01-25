@@ -116,7 +116,7 @@ class WebSocketManagerSW {
 
   // 处理接收到的消息
   handleMessage(message) {
-    console.log('📨 收到WebSocket消息:', message);
+    // console.log('📨 收到WebSocket消息:', message);
 
     switch (message.type) {
       case 'connection':
