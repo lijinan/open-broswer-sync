@@ -30,6 +30,22 @@ class ExtensionContent {
     this.observeFormSubmissions()
   }
 
+  // 检查登录状态
+  async isLoggedIn() {
+    try {
+      const settings = await extensionAPI.runtime.sendMessage({ type: 'GET_SETTINGS' })
+      return !!settings.token
+    } catch (error) {
+      console.error('检查登录状态失败:', error)
+      return false
+    }
+  }
+
+  // 显示未登录提示
+  showLoginRequiredNotification() {
+    this.showPageNotification('⚠️ 请先登录后再使用密码保存功能', 'warning')
+  }
+
   async handleMessage(request, sender, sendResponse) {
     try {
       switch (request.type) {
@@ -201,9 +217,16 @@ class ExtensionContent {
     }
   }
 
-  showFormSaveHint(form) {
+  async showFormSaveHint(form) {
     // 检查是否已经显示过提示
     if (form.querySelector('.extension-save-hint')) return
+
+    // 检查登录状态
+    const loggedIn = await this.isLoggedIn()
+    if (!loggedIn) {
+      console.log('未登录，跳过显示保存密码提示')
+      return
+    }
 
     const hint = document.createElement('div')
     hint.className = 'extension-save-hint'
@@ -222,7 +245,7 @@ class ExtensionContent {
       animation: slideDown 0.3s ease;
     `
     hint.innerHTML = '💾 点击保存密码'
-    
+
     // 添加动画样式
     if (!document.getElementById('extension-animations')) {
       const style = document.createElement('style')
@@ -261,7 +284,7 @@ class ExtensionContent {
     if (getComputedStyle(form).position === 'static') {
       form.style.position = 'relative'
     }
-    
+
     form.appendChild(hint)
 
     // 5秒后自动隐藏
@@ -282,6 +305,12 @@ class ExtensionContent {
         const settings = await extensionAPI.runtime.sendMessage({ type: 'GET_SETTINGS' })
         if (!settings.autoDetect) return
 
+        // 检查登录状态
+        if (!settings.token) {
+          console.log('未登录，跳过表单提交监听')
+          return
+        }
+
         const formData = this.extractFormData(form)
         if (formData.username && formData.password) {
           // 延迟检查登录是否成功
@@ -289,7 +318,7 @@ class ExtensionContent {
             // 简单检查：如果页面URL改变或者没有错误提示，认为登录成功
             const hasError = document.querySelector('.error, .alert-danger, [class*="error"]')
             if (!hasError) {
-              this.showSavePasswordPrompt({
+              await this.showSavePasswordPrompt({
                 siteName: this.getSiteName(),
                 siteUrl: window.location.origin,
                 username: formData.username,
@@ -304,7 +333,14 @@ class ExtensionContent {
     })
   }
 
-  showSavePasswordPrompt(data) {
+  async showSavePasswordPrompt(data) {
+    // 检查登录状态（虽然调用处已经检查，但为了安全再次检查）
+    const loggedIn = await this.isLoggedIn()
+    if (!loggedIn) {
+      this.showLoginRequiredNotification()
+      return
+    }
+
     // 创建保存密码的提示框
     const prompt = document.createElement('div')
     prompt.style.cssText = `
@@ -322,7 +358,7 @@ class ExtensionContent {
       max-width: 300px;
       animation: slideIn 0.3s ease;
     `
-    
+
     prompt.innerHTML = `
       <div style="display: flex; align-items: center; margin-bottom: 12px;">
         <div style="width: 32px; height: 32px; background: #1890ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
@@ -386,6 +422,13 @@ class ExtensionContent {
   }
 
   async detectPasswordFromContext() {
+    // 检查登录状态
+    const loggedIn = await this.isLoggedIn()
+    if (!loggedIn) {
+      this.showLoginRequiredNotification()
+      return
+    }
+
     const formData = this.detectPasswordForm()
     if (formData.found) {
       const confirmed = confirm(`检测到登录表单，确定要保存密码吗？\n\n网站: ${formData.data.siteName}\n用户名: ${formData.data.username}`)

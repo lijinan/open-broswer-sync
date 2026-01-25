@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业门户 - OA系统登录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect fill="%231a365d" width="1200" height="800"/><circle cx="200" cy="200" r="300" fill="%232c5282" opacity="0.3"/><circle cx="1000" cy="600" r="400" fill="%232c5282" opacity="0.2"/></svg>') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-wrapper {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .left-section {
+            flex: 1;
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            padding: 60px 40px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-section::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .company-logo {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .company-logo::before {
+            content: "🏢";
+        }
+
+        .welcome-text h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .welcome-text p {
+            font-size: 16px;
+            line-height: 1.8;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .features {
+            list-style: none;
+        }
+
+        .features li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .features li::before {
+            content: "✓";
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 12px;
+        }
+
+        .right-section {
+            flex: 0 0 420px;
+            padding: 50px 40px;
+        }
+
+        .login-header {
+            margin-bottom: 40px;
+        }
+
+        .login-header h2 {
+            font-size: 28px;
+            color: #1a365d;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 16px 14px 44px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: #2c5282;
+            box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.1);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            font-size: 13px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            color: #4a5568;
+            cursor: pointer;
+        }
+
+        .checkbox-label input {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            color: #2c5282;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .forgot-link:hover {
+            color: #1a365d;
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(26, 54, 93, 0.2);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(26, 54, 93, 0.3);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            color: #a0aec0;
+            font-size: 13px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .divider span {
+            padding: 0 16px;
+        }
+
+        .quick-login {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .quick-btn {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            color: #4a5568;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-btn:hover {
+            border-color: #2c5282;
+            background: #f7fafc;
+        }
+
+        .quick-btn .icon {
+            font-size: 24px;
+        }
+
+        .test-info {
+            margin-top: 24px;
+            padding: 12px;
+            background: #fef3c7;
+            border-left: 3px solid #f59e0b;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #92400e;
+        }
+
+        @media (max-width: 768px) {
+            .login-wrapper {
+                flex-direction: column;
+            }
+
+            .left-section {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="left-section">
+            <div class="company-logo">智慧企业</div>
+
+            <div class="welcome-text">
+                <h1>企业协同<br>办公平台</h1>
+                <p>统一身份认证，一站式访问企业所有应用系统</p>
+            </div>
+
+            <ul class="features">
+                <li>统一身份认证</li>
+                <li>单点登录 (SSO)</li>
+                <li>多因素安全验证</li>
+                <li>企业应用中心</li>
+                <li>数据安全加密</li>
+                <li>移动端支持</li>
+            </ul>
+        </div>
+
+        <div class="right-section">
+            <div class="login-header">
+                <h2>用户登录</h2>
+                <p>请使用企业账号登录系统</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="employeeId">工号 / 账号</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="employeeId" name="employeeId" autocomplete="username" required placeholder="请输入工号或账号">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">登录密码</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="请输入登录密码">
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberDevice" name="rememberDevice">
+                        记住设备
+                    </label>
+                    <a href="#" class="forgot-link">忘记密码?</a>
+                </div>
+
+                <button type="submit" class="btn-login">安全登录</button>
+            </form>
+
+            <div class="divider">
+                <span>快捷登录</span>
+            </div>
+
+            <div class="quick-login">
+                <button class="quick-btn" onclick="quickLogin('dingtalk')">
+                    <span class="icon">💼</span>
+                    <span>钉钉</span>
+                </button>
+                <button class="quick-btn" onclick="quickLogin('wechat')">
+                    <span class="icon">💬</span>
+                    <span>企业微信</span>
+                </button>
+                <button class="quick-btn" onclick="quickLogin('feishu')">
+                    <span class="icon">🚀</span>
+                    <span>飞书</span>
+                </button>
+            </div>
+
+            <div class="test-info">
+                <strong>📋 测试场景</strong><br>
+                企业 OA 系统登录 - 测试插件对内部系统的密码管理支持
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const employeeId = document.getElementById('employeeId').value;
+            const password = document.getElementById('password').value;
+            const rememberDevice = document.getElementById('rememberDevice').checked;
+
+            console.log('[企业OA] 登录信息:', {
+                employeeId: employeeId,
+                passwordLength: password.length,
+                rememberDevice: rememberDevice,
+                userAgent: navigator.userAgent,
+                timestamp: new Date().toISOString()
+            });
+
+            if (employeeId && password) {
+                alert(`✅ 企业OA登录成功！\n\n工号: ${employeeId}\n记住设备: ${rememberDevice ? '是' : '否'}\n\n密码管理插件应该记录此企业系统的登录信息。`);
+            }
+        }
+
+        function quickLogin(platform) {
+            alert(`即将跳转${platform}扫码登录...\n\n实际应用中会打开相应平台的扫码页面。`);
+        }
+
+        // 监听页面事件
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[企业OA] 页面加载完成');
+            console.log('[企业OA] 等待插件检测登录表单...');
+
+            const employeeIdInput = document.getElementById('employeeId');
+            const passwordInput = document.getElementById('password');
+
+            // 检测自动填充
+            const detectAutofill = () => {
+                setTimeout(() => {
+                    if (passwordInput.value && passwordInput.value !== '') {
+                        console.log('[企业OA] 检测到密码字段已填充（可能是自动填充）');
+                    }
+                }, 500);
+            };
+
+            passwordInput.addEventListener('focus', detectAutofill);
+
+            // 监听输入
+            passwordInput.addEventListener('input', () => {
+                if (passwordInput.value.length >= 6) {
+                    console.log('[企业OA] 密码输入中，长度:', passwordInput.value.length);
+                }
+            });
+        });
+
+        // 模拟企业 SSO 回调
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'SSO_LOGIN') {
+                console.log('[企业OA] 收到SSO登录消息:', event.data);
+            }
+        });
+    </script>
+</body>
+</html>

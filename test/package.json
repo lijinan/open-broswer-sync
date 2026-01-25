@@ -1,0 +1,17 @@
+{
+  "name": "bookmark-sync-test",
+  "version": "1.0.0",
+  "description": "Test pages for bookmark sync application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "test",
+    "bookmark",
+    "sync"
+  ],
+  "author": "leon",
+  "license": "MIT"
+}

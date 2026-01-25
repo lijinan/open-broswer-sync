@@ -41,57 +41,6 @@
 
 ## 快速开始
 
-### 生产环境部署
-
-**Windows用户:**
-```bash
-# 双击运行或在命令行执行
-start.bat
-```
-
-**Linux/Mac用户:**
-```bash
-# 给脚本执行权限并运行
-chmod +x start.sh
-./start.sh
-```
-
-### 本地开发环境
-
-**Windows用户:**
-```bash
-# 启动开发环境（自动重载）
-start-local-dev.bat
-```
-
-**Linux/Mac用户:**
-```bash
-# 启动开发环境（自动重载）
-chmod +x start-local-dev.sh
-./start-local-dev.sh
-```
-
-### 手动部署
-
-```bash
-# 1. 确保PostgreSQL运行
-pg_isready -h localhost -p 5432 -U postgres
-
-# 2. 克隆项目
-git clone <repository-url>
-cd bookmark-sync
-
-# 3. 初始化数据库
-psql -h localhost -p 5432 -U postgres -d postgres -f setup-database.sql
-
-# 4. 启动服务
-docker-compose up -d
-
-# 5. 访问应用
-# Web界面: http://localhost:8080
-# API接口: http://localhost:3001
-```
-
 ### 开发环境
 
 ```bash
@@ -124,8 +73,8 @@ npm run dev
 
 ### 首次使用
 
-1. **启动应用**: 运行 `start.bat` (Windows) 或 `start.sh` (Linux/Mac)
-2. **访问Web界面**: 打开浏览器访问 http://localhost:8080
+1. **启动应用**: 运行 restart.sh
+2. **访问Web界面**: 打开浏览器访问 http://localhost:3002
 3. **注册账号**: 点击"立即注册"创建新账号
 4. **开始使用**: 登录后即可管理书签和密码
 
@@ -149,36 +98,6 @@ npm run dev
 - **密码哈希**: 用户密码使用bcrypt安全哈希
 - **JWT认证**: 使用JSON Web Token进行身份验证
 - **API限流**: 防止暴力破解和恶意请求
-
-## 常见问题
-
-### Q: 如何备份数据？
-A: 数据存储在本地PostgreSQL数据库中，可以使用以下命令备份：
-```bash
-pg_dump -h localhost -p 5432 -U postgres bookmark_sync > backup.sql
-```
-
-### Q: 如何恢复数据？
-A: 使用以下命令恢复备份：
-```bash
-psql -h localhost -p 5432 -U postgres -d bookmark_sync < backup.sql
-```
-
-### Q: 如何修改端口？
-A: 编辑 `docker-compose.yml` 文件中的端口映射，然后重启服务。
-
-### Q: 忘记密码怎么办？
-A: 目前需要直接操作数据库重置密码，后续版本会添加密码重置功能。
-
-### Q: 支持哪些浏览器？
-A: 支持所有现代浏览器，包括Chrome、Firefox、Safari、Edge等。
-
-## 技术支持
-
-- 📖 详细文档: [docs/overview.md](docs/overview.md)
-- 🚀 部署指南: [docs/deployment.md](docs/deployment.md)
-- 🐛 问题反馈: GitHub Issues
-- 💬 技术讨论: 欢迎提交PR和Issue
 
 ## 开源协议
 

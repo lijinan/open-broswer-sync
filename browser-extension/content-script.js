@@ -178,7 +178,7 @@ class PasswordManager {
       // 检查是否已登录扩展
       if (!this.token) {
         console.log('⚠️ 扩展未登录，跳过密码保存')
-        this.showPageNotification('扩展未登录，请先登录扩展', 'warning')
+        // this.showPageNotification('扩展未登录，请先登录扩展', 'warning')
         return
       }
       
@@ -428,13 +428,14 @@ class PasswordManager {
   async savePasswordToServer(passwordData) {
     if (!this.token) {
       console.error('❌ 未登录，无法保存密码')
+      this.showPageNotification('⚠️ 请先登录插件，再使用密码保存功能', 'warning')
       return
     }
 
     try {
       // 通过background script发送请求，避免CORS问题
       const extensionAPI = typeof chrome !== 'undefined' ? chrome : browser
-      
+
       if (extensionAPI && extensionAPI.runtime) {
         const response = await new Promise((resolve, reject) => {
           extensionAPI.runtime.sendMessage({
@@ -475,12 +476,14 @@ class PasswordManager {
   async autoFillPassword(data) {
     try {
       if (!this.token) {
-        throw new Error('未登录')
+        console.log('⚠️ 未登录，无法填充密码')
+        this.showPageNotification('⚠️ 请先登录插件，再使用密码填充功能', 'warning')
+        return { success: false, message: '未登录' }
       }
 
       // 获取当前网站的密码
       const passwords = await this.getPasswordsForSite(window.location.origin)
-      
+
       if (passwords.length === 0) {
         this.showPageNotification('未找到当前网站的密码', 'warning')
         return { success: false, message: '未找到密码' }
@@ -497,7 +500,7 @@ class PasswordManager {
 
       // 填充表单
       const filled = await this.fillPasswordForm(selectedPassword)
-      
+
       if (filled) {
         this.showPageNotification('密码已自动填充', 'success')
         return { success: true }

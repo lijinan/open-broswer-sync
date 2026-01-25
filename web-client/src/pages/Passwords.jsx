@@ -34,7 +34,12 @@ const Passwords = () => {
   const [editingPassword, setEditingPassword] = useState(null)
   const [searchText, setSearchText] = useState('')
   const [visiblePasswords, setVisiblePasswords] = useState({})
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false)
+  const [pendingPasswordId, setPendingPasswordId] = useState(null)
+  const [verifyPassword, setVerifyPassword] = useState('')
+  const [verifyLoading, setVerifyLoading] = useState(false)
   const [form] = Form.useForm()
+  const [verifyForm] = Form.useForm()
 
   useEffect(() => {
     fetchPasswords()
@@ -125,12 +130,42 @@ const Passwords = () => {
       // 隐藏密码
       setVisiblePasswords(prev => ({ ...prev, [id]: null }))
     } else {
-      // 显示密码
-      const detail = await fetchPasswordDetail(id)
-      if (detail) {
-        setVisiblePasswords(prev => ({ ...prev, [id]: detail.password }))
-      }
+      // 显示密码前需要验证
+      setPendingPasswordId(id)
+      setVerifyModalVisible(true)
+      verifyForm.resetFields()
     }
+  }
+
+  const handleVerifyPassword = async () => {
+    const passwordValue = verifyForm.getFieldValue('password')
+    if (!passwordValue) {
+      message.error('请输入密码')
+      return
+    }
+
+    setVerifyLoading(true)
+    try {
+      await api.post('/auth/verify-password', { password: passwordValue })
+      // 验证成功，显示密码
+      const detail = await fetchPasswordDetail(pendingPasswordId)
+      if (detail) {
+        setVisiblePasswords(prev => ({ ...prev, [pendingPasswordId]: detail.password }))
+      }
+      setVerifyModalVisible(false)
+      verifyForm.resetFields()
+      message.success('验证成功')
+    } catch (error) {
+      message.error(error.response?.data?.error || '密码验证失败')
+    } finally {
+      setVerifyLoading(false)
+    }
+  }
+
+  const handleVerifyCancel = () => {
+    setVerifyModalVisible(false)
+    setPendingPasswordId(null)
+    verifyForm.resetFields()
   }
 
   const copyToClipboard = async (text) => {
@@ -346,6 +381,31 @@ const Passwords = () => {
             <Input.TextArea 
               rows={3} 
               placeholder="请输入备注（可选）" 
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="密码验证"
+        open={verifyModalVisible}
+        onCancel={handleVerifyCancel}
+        onOk={handleVerifyPassword}
+        okText="确认"
+        cancelText="取消"
+        confirmLoading={verifyLoading}
+        destroyOnClose
+      >
+        <Form form={verifyForm} layout="vertical">
+          <Form.Item
+            name="password"
+            label="请输入您的登录密码以查看密码"
+            rules={[{ required: true, message: '请输入密码' }]}
+          >
+            <Input.Password
+              placeholder="请输入登录密码"
+              onPressEnter={handleVerifyPassword}
+              autoFocus
             />
           </Form.Item>
         </Form>

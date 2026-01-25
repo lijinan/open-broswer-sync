@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - CloudMail</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            flex: 1;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .left-panel h1 {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .left-panel p {
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 40px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo::before {
+            content: "📧";
+            margin-right: 10px;
+            font-size: 28px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+        }
+
+        .remember input {
+            margin-right: 6px;
+        }
+
+        .forgot-link {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .divider span {
+            padding: 0 16px;
+        }
+
+        .social-login {
+            display: flex;
+            gap: 12px;
+        }
+
+        .social-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .social-btn:hover {
+            background: #f9fafb;
+            border-color: #667eea;
+        }
+
+        .test-info {
+            margin-top: 24px;
+            padding: 12px;
+            background: #fef3c7;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #92400e;
+        }
+
+        .test-info strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h1>CloudMail</h1>
+            <p>专业的企业邮箱服务<br>安全 · 高效 · 智能</p>
+        </div>
+
+        <div class="right-panel">
+            <div class="logo">CloudMail</div>
+
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('login')">登录</div>
+                <div class="tab" onclick="switchTab('register')">注册</div>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="email">邮箱地址</label>
+                    <input type="email" id="email" name="email" autocomplete="email" required placeholder="your@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="请输入密码">
+                </div>
+
+                <div class="options">
+                    <label class="remember">
+                        <input type="checkbox" id="remember" name="remember">
+                        记住我
+                    </label>
+                    <a href="#" class="forgot-link">忘记密码?</a>
+                </div>
+
+                <button type="submit" class="btn-submit">登录</button>
+            </form>
+
+            <div class="divider">
+                <span>或使用以下方式登录</span>
+            </div>
+
+            <div class="social-login">
+                <button class="social-btn">Google</button>
+                <button class="social-btn">GitHub</button>
+            </div>
+
+            <div class="test-info">
+                <strong>📋 测试说明</strong>
+                此页面模拟邮箱登录，用于测试浏览器插件的密码保存和自动填充功能。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            // 简单的标签切换，实际应用中应该显示不同的表单
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (tab === 'register') {
+                alert('注册功能暂未实现，请使用登录功能测试密码保存');
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+
+            console.log('[插件测试] 登录表单提交:', {
+                email: email,
+                passwordLength: password.length,
+                remember: remember,
+                timestamp: new Date().toISOString()
+            });
+
+            // 模拟登录
+            alert(`✅ 登录成功！\n\n邮箱: ${email}\n记住我: ${remember ? '是' : '否'}\n\n浏览器插件应该提示保存此登录信息。`);
+        }
+
+        // 检测自动填充
+        document.addEventListener('DOMContentLoaded', () => {
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+
+            // 监听自动填充事件
+            emailInput.addEventListener('change', () => {
+                console.log('[插件测试] 检测到邮箱输入:', emailInput.value);
+            });
+
+            passwordInput.addEventListener('change', () => {
+                console.log('[插件测试] 检测到密码输入（可能是自动填充）');
+            });
+        });
+    </script>
+</body>
+</html>

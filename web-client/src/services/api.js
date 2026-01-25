@@ -22,7 +22,10 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
-    if (error.response?.status === 401) {
+    // 密码验证API的401错误不跳转登录页
+    const isVerifyPasswordEndpoint = error.config?.url?.includes('/auth/verify-password')
+
+    if (error.response?.status === 401 && !isVerifyPasswordEndpoint) {
       message.error('登录已过期，请重新登录')
       // 清除token并跳转到登录页
       localStorage.removeItem('token')

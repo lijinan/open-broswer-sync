@@ -26,24 +26,50 @@ const encryptData = (data) => {
 
 // 解密数据
 const decryptData = (encryptedData) => {
+  if (!encryptedData) {
+    throw new Error('加密数据为空');
+  }
   const bytes = CryptoJS.AES.decrypt(encryptedData, process.env.ENCRYPTION_KEY);
-  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+  const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+  if (!decryptedString) {
+    throw new Error('解密失败：数据可能已损坏');
+  }
+  return JSON.parse(decryptedString);
 };
 
 // 获取所有书签
 router.get('/', async (req, res, next) => {
   try {
+    console.log('[DEBUG] req.user.id:', req.user.id);
+    console.log('[DEBUG] Query params:', { user_id: req.user.id });
+
     const bookmarks = await db('bookmarks')
       .where({ user_id: req.user.id })
       .orderBy('created_at', 'desc');
 
-    // 解密书签数据
-    const decryptedBookmarks = bookmarks.map(bookmark => ({
-      id: bookmark.id,
-      ...decryptData(bookmark.encrypted_data),
-      created_at: bookmark.created_at,
-      updated_at: bookmark.updated_at
-    }));
+    console.log('[DEBUG] Found bookmarks count:', bookmarks.length);
+
+    // 解密书签数据，跳过解密失败的书签
+    const decryptedBookmarks = [];
+    const skippedBookmarks = [];
+
+    for (const bookmark of bookmarks) {
+      try {
+        decryptedBookmarks.push({
+          id: bookmark.id,
+          ...decryptData(bookmark.encrypted_data),
+          created_at: bookmark.created_at,
+          updated_at: bookmark.updated_at
+        });
+      } catch (decryptError) {
+        console.error(`书签 ID ${bookmark.id} 解密失败:`, decryptError.message);
+        skippedBookmarks.push(bookmark.id);
+      }
+    }
+
+    if (skippedBookmarks.length > 0) {
+      console.warn(`跳过 ${skippedBookmarks.length} 个无法解密的书签，ID: ${skippedBookmarks.join(', ')}`);
+    }
 
     res.json({ bookmarks: decryptedBookmarks });
   } catch (error) {
@@ -135,7 +161,7 @@ router.put('/:id', async (req, res, next) => {
 router.get('/search', async (req, res, next) => {
   try {
     const { q, url } = req.query;
-    
+
     if (!q && !url) {
       return res.status(400).json({ error: '搜索关键词或URL不能为空' });
     }
@@ -143,21 +169,28 @@ router.get('/search', async (req, res, next) => {
     const bookmarks = await db('bookmarks')
       .where({ user_id: req.user.id });
 
-    // 解密并搜索
-    let searchResults = bookmarks
-      .map(bookmark => ({
-        id: bookmark.id,
-        ...decryptData(bookmark.encrypted_data),
-        created_at: bookmark.created_at,
-        updated_at: bookmark.updated_at
-      }));
+    // 解密并搜索，跳过解密失败的书签
+    let searchResults = [];
+
+    for (const bookmark of bookmarks) {
+      try {
+        searchResults.push({
+          id: bookmark.id,
+          ...decryptData(bookmark.encrypted_data),
+          created_at: bookmark.created_at,
+          updated_at: bookmark.updated_at
+        });
+      } catch (decryptError) {
+        console.error(`书签 ID ${bookmark.id} 解密失败 (搜索):`, decryptError.message);
+      }
+    }
 
     if (url) {
       // 按URL精确搜索
       searchResults = searchResults.filter(bookmark => bookmark.url === url);
     } else if (q) {
       // 按关键词模糊搜索
-      searchResults = searchResults.filter(bookmark => 
+      searchResults = searchResults.filter(bookmark =>
         bookmark.title.toLowerCase().includes(q.toLowerCase()) ||
         bookmark.url.toLowerCase().includes(q.toLowerCase()) ||
         (bookmark.description && bookmark.description.toLowerCase().includes(q.toLowerCase()))
@@ -204,13 +237,24 @@ router.delete('/:id', async (req, res, next) => {
       return res.status(404).json({ error: '书签不存在' });
     }
 
-    // 解密书签数据用于通知
-    const bookmarkData = {
-      id: existingBookmark.id,
-      ...decryptData(existingBookmark.encrypted_data),
-      created_at: existingBookmark.created_at,
-      updated_at: existingBookmark.updated_at
-    };
+    let bookmarkData;
+    try {
+      // 解密书签数据用于通知
+      bookmarkData = {
+        id: existingBookmark.id,
+        ...decryptData(existingBookmark.encrypted_data),
+        created_at: existingBookmark.created_at,
+        updated_at: existingBookmark.updated_at
+      };
+    } catch (decryptError) {
+      console.error(`书签 ID ${bookmarkId} 解密失败 (删除):`, decryptError.message);
+      // 即使解密失败也允许删除，使用基本信息
+      bookmarkData = {
+        id: existingBookmark.id,
+        title: '(无法解密)',
+        url: ''
+      };
+    }
 
     // 删除书签
     await db('bookmarks')

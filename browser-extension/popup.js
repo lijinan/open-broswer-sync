@@ -85,13 +85,7 @@ class ExtensionPopup {
   bindEvents() {
     // 登录
     document.getElementById('loginBtn').addEventListener('click', () => this.login())
-    
-    // 保存书签
-    document.getElementById('saveBookmarkBtn').addEventListener('click', () => this.saveBookmark())
-    
-    // 检测密码
-    document.getElementById('detectPasswordBtn').addEventListener('click', () => this.detectPassword())
-    
+
     // 打开面板
     document.getElementById('openDashboardBtn').addEventListener('click', () => this.openDashboard())
     
@@ -106,7 +100,10 @@ class ExtensionPopup {
 
     // 打开设置
     document.getElementById('openSettingsBtn').addEventListener('click', () => this.openSettings())
-    
+
+    // 退出登录
+    document.getElementById('logoutBtn').addEventListener('click', () => this.logout())
+
     // 设置开关
     document.getElementById('autoDetectToggle').addEventListener('click', (e) => this.toggleSetting(e, 'autoDetect'))
     document.getElementById('confirmSaveToggle').addEventListener('click', (e) => this.toggleSetting(e, 'confirmSave'))
@@ -182,108 +179,41 @@ class ExtensionPopup {
     }
   }
 
-  async saveBookmark() {
+  async logout() {
     try {
-      const tabs = await extensionAPI.tabs.query({ active: true, currentWindow: true })
-      const tab = tabs[0]
+      const confirmed = confirm('确定要退出登录吗？')
 
-      const settings = await extensionAPI.storage.sync.get(['confirmSave'])
-      if (settings.confirmSave !== false) {
-        const confirmed = confirm(`确定要保存书签到同步收藏夹吗？\n\n标题: ${tab.title}\nURL: ${tab.url}`)
-        if (!confirmed) return
-      }
+      if (!confirmed) return
 
-      const response = await fetch(`${this.serverUrl}/bookmarks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.token}`
-        },
-        body: JSON.stringify({
-          title: tab.title,
-          url: tab.url,
-          folder: '同步收藏夹',
-          tags: ['扩展保存']
-        })
-      })
-
-      if (response.ok) {
-        this.showMessage('书签保存成功！', 'success')
-
-        // 发送消息到content script显示页面通知
-        extensionAPI.tabs.sendMessage(tab.id, {
-          type: 'BOOKMARK_SAVED',
-          data: { title: tab.title, url: tab.url }
-        }).catch(() => {
-          // 忽略错误，可能是特殊页面
-        })
+      // 清除本地存储的token（兼容 Firefox 和 Chrome）
+      // Firefox: 将 token 设置为 null
+      // Chrome: 使用 remove 方法
+      if (typeof extensionAPI.storage.sync.remove === 'function') {
+        await extensionAPI.storage.sync.remove(['token'])
       } else {
-        const error = await response.json()
-        throw new Error(error.message || '保存失败')
+        // Firefox 兼容方案：设置为 null
+        await extensionAPI.storage.sync.set({ token: null })
       }
+
+      // 清除本地缓存的token
+      this.token = null
+
+      this.showMessage('已退出登录', 'success')
+
+      // 延迟一下再检查连接状态，让用户看到成功消息
+      setTimeout(async () => {
+        await this.checkConnection()
+      }, 500)
     } catch (error) {
-      this.showMessage(error.message, 'error')
-    }
-  }
-
-  async detectPassword() {
-    try {
-      const tabs = await extensionAPI.tabs.query({ active: true, currentWindow: true })
-      const tab = tabs[0]
-      
-      // 向content script发送检测密码的消息
-      const response = await extensionAPI.tabs.sendMessage(tab.id, {
-        type: 'DETECT_PASSWORD_FORM'
-      })
-
-      if (response && response.found) {
-        const settings = await extensionAPI.storage.sync.get(['confirmSave'])
-        if (settings.confirmSave !== false) {
-          const confirmed = confirm(`检测到登录表单，确定要保存密码吗？\n\n网站: ${response.data.siteName}\n用户名: ${response.data.username}`)
-          if (!confirmed) return
-        }
-
-        const saveResponse = await fetch(`${this.serverUrl}/passwords`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.token}`
-          },
-          body: JSON.stringify({
-            site_name: response.data.siteName,
-            site_url: response.data.siteUrl,
-            username: response.data.username,
-            password: response.data.password,
-            category: '浏览器扩展'
-          })
-        })
-
-        if (saveResponse.ok) {
-          this.showMessage('密码保存成功！', 'success')
-          
-          // 发送消息到content script显示页面通知
-          extensionAPI.tabs.sendMessage(tab.id, {
-            type: 'PASSWORD_SAVED',
-            data: response.data
-          }).catch(() => {
-            // 忽略错误，可能是特殊页面
-          })
-        } else {
-          const error = await saveResponse.json()
-          throw new Error(error.message || '保存失败')
-        }
-      } else {
-        this.showMessage('未检测到登录表单', 'warning')
-      }
-    } catch (error) {
-      this.showMessage(error.message, 'error')
+      console.error('Logout error:', error)
+      this.showMessage('退出登录失败: ' + error.message, 'error')
     }
   }
 
   async openDashboard() {
     try {
       const settings = await extensionAPI.storage.sync.get(['token', 'serverUrl'])
-      
+
       if (!settings.token) {
         this.showMessage('请先登录扩展', 'error')
         return
@@ -291,10 +221,10 @@ class ExtensionPopup {
 
       // 构建带有token的URL，实现自动登录
       const dashboardUrl = `${settings.serverUrl.replace(':3001', ':3002')}?token=${encodeURIComponent(settings.token)}`
-      
+
       console.log('打开管理面板:', dashboardUrl)
       extensionAPI.tabs.create({ url: dashboardUrl })
-      
+
     } catch (error) {
       console.error('打开管理面板失败:', error)
       // 如果出错，使用默认URL

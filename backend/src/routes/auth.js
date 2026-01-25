@@ -151,4 +151,34 @@ router.get('/verify', authenticateToken, async (req, res, next) => {
   }
 });
 
+// 验证用户密码 (用于二次验证)
+router.post('/verify-password', authenticateToken, async (req, res, next) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: '请提供密码' });
+    }
+
+    const user = await db('users')
+      .select('password')
+      .where({ id: req.user.id })
+      .first();
+
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+
+    // 验证密码
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: '密码错误' });
+    }
+
+    res.json({ valid: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

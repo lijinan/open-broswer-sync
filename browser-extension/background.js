@@ -376,18 +376,6 @@ class ExtensionBackground {
       })
 
       chrome.contextMenus.create({
-        id: 'savePassword',
-        title: '保存密码信息',
-        contexts: ['selection']
-      })
-
-      chrome.contextMenus.create({
-        id: 'separator1',
-        type: 'separator',
-        contexts: ['page']
-      })
-
-      chrome.contextMenus.create({
         id: 'openDashboard',
         title: '打开管理面板',
         contexts: ['page']
@@ -532,12 +520,6 @@ class ExtensionBackground {
       switch (info.menuItemId) {
         case 'saveBookmark':
           await this.saveBookmarkFromContext(tab)
-          break
-
-        case 'savePassword':
-          chrome.tabs.sendMessage(tab.id, {
-            type: 'DETECT_PASSWORD_FROM_CONTEXT'
-          })
           break
 
         case 'openDashboard':

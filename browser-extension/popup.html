@@ -223,26 +223,6 @@
 
   <!-- 主要功能 -->
   <div class="actions hidden" id="mainActions">
-    <button class="action-btn" id="saveBookmarkBtn">
-      <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
-      </svg>
-      <div class="action-text">
-        <div class="action-title">保存当前页面为书签</div>
-        <div class="action-desc">一键保存到书签库</div>
-      </div>
-    </button>
-
-    <button class="action-btn" id="detectPasswordBtn">
-      <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
-      </svg>
-      <div class="action-text">
-        <div class="action-title">检测并保存密码</div>
-        <div class="action-desc">自动检测登录表单</div>
-      </div>
-    </button>
-
     <button class="action-btn" id="openDashboardBtn">
       <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
         <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
@@ -269,7 +249,7 @@
       </svg>
       <div class="action-text">
         <div class="action-title">从浏览器导入</div>
-        <div class="action-desc">覆盖账号所有数据</div>
+        <div class="action-desc">导入浏览器的“同步收藏夹”并覆盖账号的所有书签</div>
       </div>
     </button>
 
@@ -279,7 +259,7 @@
       </svg>
       <div class="action-text">
         <div class="action-title">导出到浏览器</div>
-        <div class="action-desc">同步服务器书签到浏览器</div>
+        <div class="action-desc">同步服务器书签到浏览器的“同步收藏夹”</div>
       </div>
     </button>
 
@@ -290,6 +270,16 @@
       <div class="action-text">
         <div class="action-title">扩展设置</div>
         <div class="action-desc">配置工作模式和偏好</div>
+      </div>
+    </button>
+
+    <button class="action-btn" id="logoutBtn" style="border-color: #ff4d4f; background: #fff1f0;">
+      <svg class="action-icon" viewBox="0 0 24 24" fill="#ff4d4f">
+        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+      </svg>
+      <div class="action-text">
+        <div class="action-title" style="color: #ff4d4f;">退出登录</div>
+        <div class="action-desc">清除本地登录信息</div>
       </div>
     </button>
   </div>
